@@ -1,15 +1,15 @@
 # NodeRunner
-By Ashwin Ramaswamy <br> April 2023
+By Ashwin Ramaswamy <br> May 2023
 
 <h2><b>1. Introduction and Description</b></h2>
 
 This document is a comprehensive guide to the NodeRunner Network Abstraction programming framework. It is a simple TCP client-server protocol written entirely in Python and its associated frameworks and libraries. Upon initialization, users (or their corresponding programs) will be able to communicate with each other by sending messages without programming any client/server code. 
 
 <p align="center">
-<img src= https://user-images.githubusercontent.com/70033778/232990007-97b392cf-362f-4424-9281-86cea2ee2c7e.png>
+<img src= https://user-images.githubusercontent.com/70033778/236649929-ff0c7f7d-95bd-47bc-8306-c55dbae8a83a.png>
 </p>
 <p align="center">
-<img src= https://user-images.githubusercontent.com/70033778/232990029-bbc48238-a787-46ea-88df-8e191eaf4ea7.png>
+<img src= https://user-images.githubusercontent.com/70033778/236649909-af4ce2de-6f82-4cee-8aaf-3f777dae7b52.png>
 </p>
 
 <h2><b>2. Required Packages and Software</b></h2>
@@ -18,99 +18,64 @@ This project can run on any platform that is able to support the following packa
 
 <ul>
   <li>Python version >= 3.6</li>
-  <li>NumPy version >= 1.19.5</li>
-  <li>PyTorch version >= 1.12.1</li>
-  <li>Matplotlib version >= 3.3.6</li>
 </ul>
 
-A display must be available if you want to enable the GUI as shown in Figure 1. The GUI can be disabled by commenting out the following line in the play_step() function of game.py: ```self.update_ui()``` along with commenting out all Pygame components. They only reside in game.py.
+No display is needed. However, an internet connection run by the TCP/IP protocol is needed in order to have multiple nodes communicate. Additionally, the gateway must allow incoming public traffic to a specific device in order to communicate between devices on different subnets. If you use a cloud service instance like AWS EC2 or a GCP compute engine, make sure that the instance’s security protocol allows incoming and outgoing TCP traffic.
 
 <br>
 <h2><b>3. Running the Code </b></h2>
 
-After all the necessary packages have been installed, the Zip file containing the code can be extracted. This should contain 6 Python files: agent.py, calc.py, car.py, game.py, model.py, and train.py, related as such:
+Run the following command in a Linux (or Mac) terminal to initiate a node:
+```python3 node.py```
+
+Running the above command will prompt the user to input an IP address, port, and a name. Enter the server’s public IP address as the IP address. By default, this will resolve to 0.0.0.0. Enter any unreserved port number for the port. Finally, enter a string that is unique among all parties in the communication protocol.
 
 <p align="center">
-<img src= https://user-images.githubusercontent.com/70033778/232991297-4bbd56d7-bbfe-469a-883a-9b87cc2b699c.png>
+<img src= https://user-images.githubusercontent.com/70033778/236649988-4fc99f80-1e08-4f18-9da8-f8146ec4fccc.png>
 </p>
 <p align="center">
-<img src= https://user-images.githubusercontent.com/70033778/232991449-054f0b72-e878-4ea8-8b4f-067742c74e02.png>
+<img src= https://user-images.githubusercontent.com/70033778/236649999-42fdf220-2903-4bfa-a856-39b539ecd67e.png>
 </p>
 
-Run the following command in a Linux (or Mac) terminal to start training the car:
-```python3 train.py```
+Figure 2 above demonstrates how two nodes can communicate with each other immediately after initializing and connecting. The top terminal is for node1, and the bottom terminal is for node2. node1 initializes at public IP address 18.221.21.36 and port 55555. node2 initializes at public IP address 3.27.131.196 and port 55556.
 
-Running the above command will produce a GUI as shown in Figure 1 accompanied with a text output in the terminal that contains all of the statistics for each training iteration:
-
-<p align="center">
-<img src= https://user-images.githubusercontent.com/70033778/232991850-de0a5577-f266-4138-a061-90b5a2d1da4e.png>
-</p>
-<p align="center">
-<img src= https://user-images.githubusercontent.com/70033778/232991769-31e63cfe-f18d-473d-ae90-d1c99bd4dc47.png>
-</p>
-
-This contains information on the training iteration, reward accrued after each episode, the highest reward seen across all training, the average of the last 25 rewards, and the highest average reward seen across all sliding windows of 25 consecutive episodes. Usually, after 30 – 45 minutes of training, the car is able to consistently maneuver around and keep collecting each food pellet without colliding with the frame or going off road.
 
 <br>
-<h2><b>4. Adjustable Code </b></h2>
+<h2><b>4. Interacting with the Program </b></h2>
 
-You can adjust the hyperparameters of the model in agent.py, such as the <b>learning rate</b>, <b>discount rate</b>, <b>memory size</b>, and <b>number of neurons per layer</b>.
+There are only two commands in this protocol: <i>connect</i> and <i>write</i>.
 
-```
-MAX_MEMORY = 100_000
-BATCH_SIZE = 1000
-LR = 0.0001
+```connect [IP address] [Port]``` 	– bidirectionally connects the current node to the node at the specified IP address and port.
 
-class Agent:
-    def __init__(self):
-        self.n_games = 0
-        self.gamma = 0.85 # discount rate
-        self.memory = deque(maxlen=MAX_MEMORY)
-        self.outputs = 6
-        self.model = Linear_QNet(85, 256, 256, self.outputs)
-        self.trainer = QTrainer(self.model, LR, self.gamma)
-```
+```write [node name] [text]``` 		  – sends the written text to the specified node.
 
-You can also adjust the reward heuristics in game.py, for information such as <b>collisions</b>, whether the car <b>ate the food pellet</b>, and whether the car goes <b>towards or away from the food pellet</b>.
+Once a node has been connected to a different node by specifying an IP address and port, subsequent communication can proceed by just specifying the name of the node, which is sent as a connection confirmation. A <i>‘connect’</i> request can only be done to a previously unconnected node once. Subsequent communication can only be <i>‘write’</i> requests.
 
-```
-if self.is_collision() or self.frame_iteration > 1500:
-            game_over = True
-            reward = -15
-            return reward, game_over
+<h2><b>5. Architecture Principles </b></h2>
+A traditional client-server connection treats the client and the server as separate entities, such that the server is a foundational program that binds to the system’s port and IP address. Consequently, the client is a program that is detached from the system’s port and IP address and instead connects to the server by referencing the port. As a result, multiparty communication architectures can be constructed by implementing a singular centralized server that is connected to multiple clients. The server’s job is to accept all communication and disseminate any messages sent by one client to all clients. This is because clients cannot connect to other clients directly. 
 
-     if self.ate_food():
-            reward = 15
-            self.place_food()
-     else: 
-            dst = distance(self.car.front, self.food)
-            if dst < self.min_dist:
-                self.min_dist = dst 
-                reward = 2
-            else:
-                reward = -5 
-```
+<p align="center">
+<img src= https://user-images.githubusercontent.com/70033778/236650300-27af8da4-888d-4d4b-9f1a-59571c56fbec.png>
+</p>
+<p align="center">
+<img src= https://user-images.githubusercontent.com/70033778/236650329-a0caf25f-8f64-499f-bdf3-8b5b8eb7e3d9.png>
+</p>
 
-Additionally, the architecture of the neural network can be adjusted in the model.py file. It is made using PyTorch and by default is set to 2 fully-connected layers with a ReLU non-linearity modifying each layer.
+What is actually going on? Truly, only the server is bound to the port and IP address. A single “home” client connects to the server and is the affiliated client. They communicate using sockets The home client is one of the clients, just with the special property that it gets all the info that the server gets. Clients only connect to servers. Therefore, all other nodes that want to talk to a node, will have the node’s client component connect to the Server component of that node. The server shares the information that it received to the node’s affiliated client. The node’s client can then respond by communicating to the other node’s server component, which in turn shares its message with its node’s client component. This gives the abstraction of a single node entity talking to another node entity.
+
+<p align="center">
+<img src= https://user-images.githubusercontent.com/70033778/236650381-b4028cd5-f838-406c-8d1e-97c075a7ca58.png>
+</p>
+<p align="center">
+<img src= https://user-images.githubusercontent.com/70033778/236650387-22039327-a4ed-4b36-8373-45cc70f5111d.png>
+</p>
 
 <br>
-<h2></b>5. Credits and Acknowledgements</b></h2>
+<h2></b>6. Credits and Acknowledgements</b></h2>
 
-This work would not have been possible without the decades of AI research and open-source projects that are available for students to learn. 
+First and foremost, this work would not have been possible without the decades of networking research and open-source projects that are available for students to learn. 
 
-[1] This project was inspired by the Snake Game Reinforcement Learning tutorial produced by Patrick Loeber:
-
-&emsp; &emsp; https://www.youtube.com/playlist?list=PLqnslRFeH2UrDh7vUmJ60YrmWd64mTTKV
-
-&emsp;&emsp;  https://github.com/patrickloeber/snake-ai-pytorch
-
-[2] Additionally, the Q-learning video form the YouTube channel “The Computer Scientist” was extremely formative in my understanding of Q-learning and Reinforcement Learning frameworks such as OpenAI gym:
-
-&emsp; &emsp; https://www.youtube.com/watch?v=wN3rxIKmMgE
-
-[3] Finally, a general overview of Markov decision processes and search heuristics was derived from the Fall 2018 iteration of CS 188 at UC Berkeley lecture videos and projects:
-
-&emsp; &emsp; https://inst.eecs.berkeley.edu/~cs188/fa18/
+[1] A general overview of TCP/IP protocol was derived from the Spring 2022 iteration of CS 168 at UC Berkeley lecture videos: https://cs168.io/
 
 This project is also open-sourced for educational purposes.
 
